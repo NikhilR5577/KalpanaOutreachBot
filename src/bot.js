@@ -123,6 +123,12 @@ bot.onText(/\/(add|addhospital)(.*)/, async (msg, match) => {
 
 bot.onText(/\/replies/, async (msg) => {
     try {
+        bot.sendMessage(msg.chat.id, "🔄 Checking Gmail for new replies...");
+        const newReplies = await checkForReplies();
+        if (newReplies.length > 0) {
+            bot.sendMessage(msg.chat.id, `✅ Found ${newReplies.length} new replies!`);
+        }
+
         const replies = await getLatestReplies(5);
         if (replies.length === 0) {
             bot.sendMessage(msg.chat.id, "No replies yet. Keep going! 💪");
