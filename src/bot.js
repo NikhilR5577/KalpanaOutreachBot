@@ -1,5 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
+import http from 'http';
 import 'dotenv/config';
 
 import { 
@@ -147,3 +148,19 @@ cron.schedule('*/30 * * * *', async () => {
 
 console.log('🤖 Kalpana Outreach Bot is running...');
 console.log('📬 Reply checker will run every 30 minutes.');
+
+// ─── Keep-Alive HTTP Server (prevents Render from sleeping) ───────────────────
+// UptimeRobot pings /health every 14 min → Render stays awake 24/7 for FREE
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', bot: 'KalpanaOutreachBot', uptime: process.uptime() }));
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('🤖 Kalpana Outreach Bot is alive!');
+  }
+}).listen(PORT, () => {
+  console.log(`🌐 Health server running on port ${PORT} — ping /health to keep awake`);
+});
+
