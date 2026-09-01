@@ -31,6 +31,15 @@ export async function addHospital(name, email, city) {
   return data[0];
 }
 
+export async function addHospitalsBulk(hospitalsArray) {
+  const { data, error } = await supabase
+    .from('hospitals')
+    .insert(hospitalsArray)
+    .select();
+  if (error) throw error;
+  return data;
+}
+
 export async function markHospitalSent(id) {
   const { error } = await supabase
     .from('hospitals')

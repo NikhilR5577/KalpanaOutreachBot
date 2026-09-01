@@ -4,7 +4,7 @@ import http from 'http';
 import 'dotenv/config';
 
 import { 
-    getUnsentHospitals, getAllHospitals, addHospital, 
+    getUnsentHospitals, getAllHospitals, addHospital, addHospitalsBulk,
     markHospitalSent, getLatestReplies, getStats, logOutreachEmail
 } from './db.js';
 import { sendOutreachEmail } from './mailer.js';
@@ -12,6 +12,9 @@ import { checkForReplies } from './replyChecker.js';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const chatId = process.env.TELEGRAM_CHAT_ID;
+
+let isSending = false;
+let isCheckingReplies = false;
 
 const bot = new TelegramBot(token, { polling: true });
 
@@ -37,6 +40,11 @@ Available commands:
 });
 
 bot.onText(/\/sendoutreach/, async (msg) => {
+    if (isSending) {
+        bot.sendMessage(msg.chat.id, "⏳ A campaign is already running! Please wait.");
+        return;
+    }
+    isSending = true;
     try {
         const hospitals = await getUnsentHospitals(5);
         if (hospitals.length === 0) {
@@ -60,6 +68,8 @@ bot.onText(/\/sendoutreach/, async (msg) => {
         bot.sendMessage(msg.chat.id, `🎉 Done! Sent ${sentCount} emails.`);
     } catch (err) {
         bot.sendMessage(msg.chat.id, `❌ Error: ${err.message}`);
+    } finally {
+        isSending = false;
     }
 });
 
@@ -122,6 +132,11 @@ bot.onText(/\/(add|addhospital)(.*)/, async (msg, match) => {
 });
 
 bot.onText(/\/replies/, async (msg) => {
+    if (isCheckingReplies) {
+        bot.sendMessage(msg.chat.id, "⏳ Already checking Gmail... please wait.");
+        return;
+    }
+    isCheckingReplies = true;
     try {
         bot.sendMessage(msg.chat.id, "🔄 Checking Gmail for new replies...");
         const newReplies = await checkForReplies();
@@ -146,6 +161,8 @@ bot.onText(/\/replies/, async (msg) => {
         bot.sendMessage(msg.chat.id, text);
     } catch (err) {
         bot.sendMessage(msg.chat.id, `❌ Error: ${err.message}`);
+    } finally {
+        isCheckingReplies = false;
     }
 });
 
@@ -168,7 +185,7 @@ bot.on('document', async (msg) => {
             relax_column_count: true
         });
 
-        let addedCount = 0;
+        const hospitalsToAdd = [];
         let skipCount = 0;
 
         for (const row of records) {
@@ -182,18 +199,22 @@ bot.on('document', async (msg) => {
             const city = row[2]?.trim();
 
             if (name && email && city) {
-                try {
-                    await addHospital(name, email, city);
-                    addedCount++;
-                } catch (e) {
-                    skipCount++;
-                }
+                hospitalsToAdd.push({ name, email, city, status: 'pending', sent: false, replied: false });
             } else {
                 skipCount++;
             }
         }
 
-        bot.sendMessage(msg.chat.id, `✅ CSV Processed!\n\n🏥 Added: ${addedCount} hospitals\n⏭️ Skipped: ${skipCount} rows (headers or invalid)`);
+        if (hospitalsToAdd.length > 0) {
+            try {
+                await addHospitalsBulk(hospitalsToAdd);
+                bot.sendMessage(msg.chat.id, `✅ CSV Processed!\n\n🏥 Bulk Added: ${hospitalsToAdd.length} hospitals\n⏭️ Skipped: ${skipCount} rows (headers or invalid)`);
+            } catch (err) {
+                bot.sendMessage(msg.chat.id, `❌ Error during bulk insert: ${err.message}`);
+            }
+        } else {
+            bot.sendMessage(msg.chat.id, `❌ No valid hospitals found in CSV.\n⏭️ Skipped: ${skipCount} rows`);
+        }
     } catch (err) {
         bot.sendMessage(msg.chat.id, `❌ Error processing CSV: ${err.message}`);
     }
