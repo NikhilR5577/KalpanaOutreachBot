@@ -22,6 +22,8 @@ export async function checkForReplies() {
     try {
       const hospitals = await getAllHospitals();
       
+      const uidsToMark = [];
+      
       for await (let msg of client.fetch({ unseen: true }, { envelope: true, source: true })) {
         const fromEmail = msg.envelope.from[0].address;
         const subject = msg.envelope.subject;
@@ -36,7 +38,7 @@ export async function checkForReplies() {
         if (matchedHospital) {
             await saveReply(matchedHospital.id, fromEmail, subject, preview);
             await markHospitalReplied(matchedHospital.id);
-            await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true });
+            uidsToMark.push(msg.uid);
             newReplies.push({
                 hospitalName: matchedHospital.name,
                 from: fromEmail,
@@ -44,6 +46,11 @@ export async function checkForReplies() {
                 preview: preview
             });
         }
+      }
+      
+      // Mark as seen after fetch loop
+      for (const uid of uidsToMark) {
+        await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true });
       }
     } finally {
       lock.release();
