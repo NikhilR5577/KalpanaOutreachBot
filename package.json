@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
+    "csv-parse": "^7.0.2",
     "dotenv": "^16.4.5",
     "imapflow": "^1.0.162",
     "mailparser": "^3.9.19",

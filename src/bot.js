@@ -134,6 +134,56 @@ bot.onText(/\/replies/, async (msg) => {
     }
 });
 
+bot.on('document', async (msg) => {
+    try {
+        const doc = msg.document;
+        if (!doc.file_name.endsWith('.csv') && doc.mime_type !== 'text/csv') {
+            bot.sendMessage(msg.chat.id, "❌ Please send a .csv file.");
+            return;
+        }
+
+        bot.sendMessage(msg.chat.id, "⏳ Downloading and parsing CSV...");
+        const fileLink = await bot.getFileLink(doc.file_id);
+        const response = await fetch(fileLink);
+        const text = await response.text();
+
+        const { parse } = await import('csv-parse/sync');
+        const records = parse(text, {
+            skip_empty_lines: true,
+            relax_column_count: true
+        });
+
+        let addedCount = 0;
+        let skipCount = 0;
+
+        for (const row of records) {
+            if (row[0] && row[0].toLowerCase().includes('name')) {
+                skipCount++;
+                continue;
+            }
+
+            const name = row[0]?.trim();
+            const email = row[1]?.trim();
+            const city = row[2]?.trim();
+
+            if (name && email && city) {
+                try {
+                    await addHospital(name, email, city);
+                    addedCount++;
+                } catch (e) {
+                    skipCount++;
+                }
+            } else {
+                skipCount++;
+            }
+        }
+
+        bot.sendMessage(msg.chat.id, `✅ CSV Processed!\n\n🏥 Added: ${addedCount} hospitals\n⏭️ Skipped: ${skipCount} rows (headers or invalid)`);
+    } catch (err) {
+        bot.sendMessage(msg.chat.id, `❌ Error processing CSV: ${err.message}`);
+    }
+});
+
 cron.schedule('*/30 * * * *', async () => {
   try {
       const replies = await checkForReplies();
