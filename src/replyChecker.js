@@ -36,6 +36,7 @@ export async function checkForReplies() {
         if (matchedHospital) {
             await saveReply(matchedHospital.id, fromEmail, subject, preview);
             await markHospitalReplied(matchedHospital.id);
+            await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true });
             newReplies.push({
                 hospitalName: matchedHospital.name,
                 from: fromEmail,
