@@ -15,6 +15,14 @@ const chatId = process.env.TELEGRAM_CHAT_ID;
 
 const bot = new TelegramBot(token, { polling: true });
 
+bot.setMyCommands([
+  { command: '/sendoutreach', description: 'Send emails to next 5 hospitals' },
+  { command: '/status', description: 'View outreach statistics' },
+  { command: '/listhospitals', description: 'List all hospitals' },
+  { command: '/add', description: 'Add hospital (Name | Email | City)' },
+  { command: '/replies', description: 'View latest replies' }
+]);
+
 bot.onText(/\/start/, (msg) => {
   const welcomeText = `🏥 Kalpana TechLabs Outreach Bot
 
@@ -22,7 +30,8 @@ Available commands:
 /sendoutreach — Send emails to next 5 hospitals
 /status — View outreach statistics
 /listhospitals — List all hospitals
-/addhospital — Add a hospital
+/add — Add a hospital
+
 /replies — View latest replies`;
   bot.sendMessage(msg.chat.id, welcomeText);
 });
@@ -90,16 +99,16 @@ bot.onText(/\/listhospitals/, async (msg) => {
     }
 });
 
-bot.onText(/\/addhospital(.*)/, async (msg, match) => {
-    const args = match[1].trim();
+bot.onText(/\/(add|addhospital)(.*)/, async (msg, match) => {
+    const args = match[2].trim();
     if (!args) {
-        bot.sendMessage(msg.chat.id, "Usage: /addhospital Name | Email | City");
+        bot.sendMessage(msg.chat.id, "Usage: /add Name | Email | City");
         return;
     }
     
     const parts = args.split('|').map(p => p.trim());
     if (parts.length !== 3) {
-        bot.sendMessage(msg.chat.id, "Usage: /addhospital Name | Email | City");
+        bot.sendMessage(msg.chat.id, "Usage: /add Name | Email | City");
         return;
     }
     
