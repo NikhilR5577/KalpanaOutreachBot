@@ -1,7 +1,7 @@
 import { ImapFlow } from 'imapflow';
 import 'dotenv/config';
 import { getAllHospitals, saveReply, markHospitalReplied } from './db.js';
-
+import { simpleParser } from 'mailparser';
 export async function checkForReplies() {
   const client = new ImapFlow({
     host: 'imap.gmail.com',
@@ -25,13 +25,8 @@ export async function checkForReplies() {
       for await (let msg of client.fetch({ unseen: true }, { envelope: true, source: true })) {
         const fromEmail = msg.envelope.from[0].address;
         const subject = msg.envelope.subject;
-        const sourceText = msg.source.toString('utf8');
-        
-        const matchBody = sourceText.match(/\r\n\r\n([\s\S]*)/);
-        let preview = '';
-        if (matchBody && matchBody[1]) {
-           preview = matchBody[1].replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').substring(0, 200).trim();
-        }
+        const parsed = await simpleParser(msg.source);
+        let preview = parsed.text ? parsed.text.replace(/\s+/g, ' ').substring(0, 200).trim() : '';
 
         let matchedHospital = hospitals.find(h => 
             h.email.toLowerCase() === fromEmail.toLowerCase() || 
