@@ -25,7 +25,7 @@ export function getOutreachEmailHTML(hospitalName, siteUrl) {
 
         <div style="background-color: #1e1e38; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #3b82f6;">
           <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #e2e8f0;">
-            <strong>Currently live at District Hospital Sagar, M.P.</strong> — serving 500+ patients per day. The system received a Certificate of Appreciation from the Government of Madhya Pradesh.
+            <strong>Currently live at District Hospital Sagar, M.P.</strong> The system received a Certificate of Appreciation from the Government of Madhya Pradesh.
           </p>
         </div>
 
@@ -44,7 +44,7 @@ export function getOutreachEmailHTML(hospitalName, siteUrl) {
         <h3 style="color: #3b82f6; font-size: 20px; margin-top: 30px;">Pricing</h3>
         <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">
           <strong>Government/Pilot:</strong> Free<br>
-          <strong>Private Hospital:</strong> ₹2,00,000 setup + ₹60,000/year AMC
+          <strong>Private Hospital:</strong> ₹1,00,000 setup + ₹60,000/year AMC
         </p>
 
         <div style="text-align: center; margin: 40px 0;">
